@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        'brand-blue': '#0062AD',
         primeoak: {
           blue: '#0062AD',
           red: '#C8102E',

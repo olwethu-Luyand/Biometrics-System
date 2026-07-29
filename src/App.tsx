@@ -1,33 +1,75 @@
-import { useState, useEffect } from 'react';
-import { AuthLayout } from './components/layout/AuthLayout';
-import { AuthTabs } from './components/auth/AuthTabs';
-import { SignInForm } from './components/auth/SignInForm';
-import { SignUpForm } from './components/auth/SignUpForm';
-import type { AuthMode } from './types/auth';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sidebar } from './components/layout/Sidebar';
+import logo from './assets/logo.jpeg';
+import { DashboardPage } from './pages/DashboardPage';
+import { EmployeesPage } from './pages/EmployeesPage';
+import { AttendancePage } from './pages/AttendancePage';
+import { ReportPage } from './pages/ReportPage';
+import { RegisterEmployeePage } from './pages/RegisterEmployeePage';
+import { PayrollPage } from './pages/PayrollPage';
+import { UserProfilePage } from './pages/UserProfilePage';
+import { SignIn } from './components/auth/SignIn';
+import { SignUp } from './components/auth/SignUp';
+import { TermsPage } from './components/auth/TermsPage';
 
 export default function App() {
-  const [authMode, setAuthMode] = useState<AuthMode>('signup');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [activePage, setActivePage] = useState('dashboard');
+  const [authPage, setAuthPage] = useState<'auth' | 'terms'>('auth');
 
-  // Update browser tab title dynamically
-  useEffect(() => {
-    document.title = authMode === 'signin'
-      ? 'Sign In | PrimeOak Solutions'
-      : 'Sign Up | PrimeOak Solutions';
-  }, [authMode]);
+  if (!isAuthenticated) {
+    if (authPage === 'terms') {
+      return <TermsPage onBack={() => setAuthPage('auth')} />;
+    }
+    return authMode === 'signin' ? (
+      <SignIn onSignIn={() => setIsAuthenticated(true)} onSwitchToSignUp={() => setAuthMode('signup')} />
+    ) : (
+      <SignUp onSignUp={() => setIsAuthenticated(true)} onSwitchToSignIn={() => setAuthMode('signin')} onTermsClick={() => setAuthPage('terms')} />
+    );
+  }
+
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard': return <DashboardPage />;
+      case 'employees': return <EmployeesPage />;
+      case 'attendance': return <AttendancePage />;
+      case 'report': return <ReportPage />;
+      case 'register': return <RegisterEmployeePage />;
+      case 'payroll': return <PayrollPage />;
+      case 'profile': return <UserProfilePage />;
+      default: return <DashboardPage />;
+    }
+  };
 
   return (
-    <AuthLayout>
-      <div className="space-y-6">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-primeoak-dark">
-            {authMode === 'signin' ? 'Welcome Back' : 'Create an account'}
-          </h2>
-          <p className="text-sm text-primeoak-gray-text">Please enter your details</p>
-        </div>
-
-        <AuthTabs mode={authMode} onModeChange={setAuthMode} />
-        {authMode === 'signin' ? <SignInForm /> : <SignUpForm />}
+    <div className="app-layout">
+      <Sidebar active={activePage} onNavigate={setActivePage} onLogout={() => setIsAuthenticated(false)} />
+      <div className="main-area">
+        <header className="topnav">
+          <div className="topnav-left">
+            <img src={logo} alt="PrimeOak" className="topnav-logo" />
+          </div>
+          <div className="topnav-right">
+            <span className="topnav-user">Olwethu Xaba</span>
+            <div className="topnav-avatar">OX</div>
+          </div>
+        </header>
+        <main className="main-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderPage()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
-    </AuthLayout>
+    </div>
   );
 }
