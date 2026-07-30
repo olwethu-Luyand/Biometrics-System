@@ -1,3 +1,5 @@
+import { Icon } from '../components/Icon';
+
 const rows = [
   { id: '00003333', date: '10 July 2026', checkIn: '08:00', checkOut: '16:00', overtime: '2 Hrs', status: 'Present' as const },
   { id: '00003333', date: '10 July 2026', checkIn: '08:00', checkOut: '16:00', overtime: '0 Hrs', status: 'Absent' as const },
@@ -13,7 +15,7 @@ export function AttendancePage() {
       <h1 className="page-title">Attendance overview</h1>
       <br />
       <div className="search-box">
-        <i className="fa-solid fa-magnifying-glass" style={{ color: '#9ca3af' }} />
+        <Icon name="search" className="w-4 h-4 search-icon" />
         <input type="text" placeholder="Search employee" />
       </div>
       <div className="table-container">

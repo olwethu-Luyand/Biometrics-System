@@ -1,3 +1,5 @@
+import { Icon } from '../Icon';
+
 const navItems = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'employees', label: 'Employees' },
@@ -25,7 +27,7 @@ export function Sidebar({ active, onNavigate, onLogout }: SidebarProps) {
         ))}
       </ul>
       <a className="logout-btn" onClick={onLogout}>
-        <i className="fa-solid fa-right-from-bracket" />
+        <Icon name="user" className="w-4 h-4 logout-icon" />
         <span>Log out</span>
       </a>
     </aside>

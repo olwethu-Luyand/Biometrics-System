@@ -302,8 +302,15 @@ body {
   max-width: 340px;
   margin-bottom: 20px;
 }
-.search-box i {
-  font-size: 14px;
+.search-icon {
+  opacity: 0.65;
+}
+.logout-icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.65;
+}
+.logout-btn:hover .logout-icon {
+  opacity: 1;
 }
 .search-box input {
   border: none;

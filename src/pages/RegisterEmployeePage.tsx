@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Fingerprint, Plus, Search } from 'lucide-react';
+import { Fingerprint, Plus, Search, CheckCircle, XCircle } from 'lucide-react';
+import { useWebAuthn } from '../hooks/useWebAuthn';
 
 export function RegisterEmployeePage() {
   const [view, setView] = useState<'list' | 'add'>('list');
   const [search, setSearch] = useState('');
+  const [bioStatus, setBioStatus] = useState<'idle' | 'scanning' | 'registered' | 'error'>('idle');
+  const { register, isSupported } = useWebAuthn();
 
   const registeredEmployees = [
     { id: '00003333', name: 'Boitumelo', surname: 'Magashula', email: 'bfMag@gmail.com', role: 'Employee' },
@@ -64,9 +67,40 @@ export function RegisterEmployeePage() {
               <input type="password" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-blue" />
             </div>
 
-            <div className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl">
-              <Fingerprint className="w-16 h-16 text-slate-400 dark:text-slate-500 hover:text-brand-blue cursor-pointer transition-colors" />
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Biometric Scan (Optional)</p>
+            <div
+              className={'flex flex-col items-center justify-center p-4 border border-dashed rounded-xl cursor-pointer transition-colors ' + (bioStatus === 'registered' ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20' : bioStatus === 'error' ? 'border-red-400 bg-red-50 dark:bg-red-950/20' : 'border-slate-300 dark:border-slate-700 hover:border-brand-blue')}
+              onClick={async () => {
+                if (bioStatus === 'registered' || !isSupported) return;
+                setBioStatus('scanning');
+                try {
+                  await register();
+                  setBioStatus('registered');
+                } catch {
+                  setBioStatus('error');
+                  setTimeout(() => setBioStatus('idle'), 3000);
+                }
+              }}
+            >
+              {bioStatus === 'registered' ? (
+                <CheckCircle className="w-16 h-16 text-emerald-500" />
+              ) : bioStatus === 'scanning' ? (
+                <Fingerprint className="w-16 h-16 text-brand-blue animate-pulse" />
+              ) : bioStatus === 'error' ? (
+                <XCircle className="w-16 h-16 text-red-500" />
+              ) : (
+                <Fingerprint className={'w-16 h-16 transition-colors ' + (isSupported ? 'text-slate-400 dark:text-slate-500 hover:text-brand-blue' : 'text-slate-300 dark:text-slate-600')} />
+              )}
+              <p className={'text-xs mt-2 font-medium ' + (bioStatus === 'registered' ? 'text-emerald-600 dark:text-emerald-400' : bioStatus === 'error' ? 'text-red-500' : 'text-slate-400 dark:text-slate-500')}>
+                {bioStatus === 'registered'
+                  ? 'Biometric Registered'
+                  : bioStatus === 'scanning'
+                  ? 'Scanning...'
+                  : bioStatus === 'error'
+                  ? 'Scan Failed'
+                  : isSupported
+                  ? 'Tap to scan fingerprint'
+                  : 'Biometric not available'}
+              </p>
             </div>
           </div>
 

@@ -1,3 +1,5 @@
+import { Icon } from '../components/Icon';
+
 const employees = [
   { name: 'Boitumelo Magashula', title: 'Employee', number: '00001111' },
   { name: 'Mooketsi Mogale', title: 'Employee', number: '00002222' },
@@ -13,7 +15,7 @@ export function EmployeesPage() {
       <h1 className="page-title">Employee overview</h1>
       <br />
       <div className="search-box">
-        <i className="fa-solid fa-magnifying-glass" style={{ color: '#9ca3af' }} />
+        <Icon name="search" className="w-4 h-4 search-icon" />
         <input type="text" placeholder="Search employee" />
       </div>
       <div className="table-container">

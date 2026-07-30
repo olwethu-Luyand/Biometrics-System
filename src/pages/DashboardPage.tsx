@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Icon } from '../components/Icon';
 
 const weeklyData = [
   { day: 'Monday', present: 9, absent: 1 },
@@ -18,9 +19,9 @@ export function DashboardPage() {
 
       <section className="stats-row">
         {[
-          { label: 'Total employees', value: '10', icon: 'fa-users', cls: 'blue' },
-          { label: 'Present Today', value: '7', icon: 'fa-user-check', cls: 'green' },
-          { label: 'Absent Today', value: '3', icon: 'fa-user-minus', cls: 'red' },
+          { label: 'Total employees', value: '10', icon: 'employees', cls: 'blue' },
+          { label: 'Present Today', value: '7', icon: 'present', cls: 'green' },
+          { label: 'Absent Today', value: '3', icon: 'absent', cls: 'red' },
         ].map((s, i) => (
           <motion.div
             key={s.label}
@@ -29,7 +30,7 @@ export function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: i * 0.1 }}
           >
-            <div className="icon-wrapper"><i className={`fa-solid ${s.icon}`} /></div>
+            <div className="icon-wrapper"><Icon name={s.icon as any} className="w-5 h-5" /></div>
             <div className="stat-info">
               <span className="stat-label">{s.label}</span>
               <span className="stat-value">{s.value}</span>
