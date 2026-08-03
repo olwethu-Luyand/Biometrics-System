@@ -6,6 +6,7 @@ const navItems = [
   { id: 'attendance', label: 'Attendance' },
   { id: 'report', label: 'Report' },
   { id: 'register', label: 'Register Employee' },
+  { id: 'audit', label: 'Audit logs' },
   { id: 'payroll', label: 'Payroll' },
   { id: 'profile', label: 'User profile' },
 ];

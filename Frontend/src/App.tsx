@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clearAuth } from './lib/api';
 import { Sidebar } from './components/layout/Sidebar';
 import logo from './assets/logo.jpeg';
 import { DashboardPage } from './pages/DashboardPage';
@@ -7,6 +8,7 @@ import { EmployeesPage } from './pages/EmployeesPage';
 import { AttendancePage } from './pages/AttendancePage';
 import { ReportPage } from './pages/ReportPage';
 import { RegisterEmployeePage } from './pages/RegisterEmployeePage';
+import { AuditLogsPage } from './pages/AuditLogsPage';
 import { PayrollPage } from './pages/PayrollPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { SignIn } from './components/auth/SignIn';
@@ -37,6 +39,7 @@ export default function App() {
       case 'attendance': return <AttendancePage />;
       case 'report': return <ReportPage />;
       case 'register': return <RegisterEmployeePage />;
+      case 'audit': return <AuditLogsPage />;
       case 'payroll': return <PayrollPage />;
       case 'profile': return <UserProfilePage />;
       default: return <DashboardPage />;
@@ -45,7 +48,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar active={activePage} onNavigate={setActivePage} onLogout={() => setIsAuthenticated(false)} />
+      <Sidebar active={activePage} onNavigate={setActivePage} onLogout={() => { clearAuth(); setIsAuthenticated(false); }} />
       <div className="main-area">
         <header className="topnav">
           <div className="topnav-left">

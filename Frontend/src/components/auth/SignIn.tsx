@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Fingerprint } from 'lucide-react';
 import { useWebAuthn } from '../../hooks/useWebAuthn';
+import { apiRequest, setAuth, type ApiUser } from '../../lib/api';
 import banner from '../../assets/prime_oak.jpeg';
-
-const VALID_EMAIL = 'admin@primeoak.co.za';
-const VALID_PASSWORD = 'password123';
 
 interface SignInProps {
   onSignIn: () => void;
@@ -17,16 +15,23 @@ export function SignIn({ onSignIn, onSwitchToSignUp }: SignInProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [bioLoading, setBioLoading] = useState(false);
+  const [bioEmployeeId, setBioEmployeeId] = useState('');
   const { authenticate, isSupported } = useWebAuthn();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (email !== VALID_EMAIL || password !== VALID_PASSWORD) {
-      setError('Invalid email or password');
-      return;
+    try {
+      const res = await apiRequest<{ token: string; user: ApiUser }>('/api/auth/login', {
+        method: 'POST',
+        body: { email, password },
+        token: null,
+      });
+      setAuth(res.token, res.user);
+      onSignIn();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign in failed');
     }
-    onSignIn();
   };
 
   return (
@@ -86,17 +91,31 @@ export function SignIn({ onSignIn, onSwitchToSignUp }: SignInProps) {
                 <span className="text-xs text-slate-400">or</span>
                 <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
               </div>
+              <div className="mb-2">
+                <input
+                  type="text"
+                  placeholder="Employee ID for fingerprint login"
+                  value={bioEmployeeId}
+                  onChange={(e) => setBioEmployeeId(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-brand-blue"
+                />
+              </div>
               <button
                 type="button"
                 disabled={bioLoading}
                 onClick={async () => {
+                  if (!bioEmployeeId.trim()) {
+                    setError('Enter your employee ID to sign in with fingerprint');
+                    return;
+                  }
                   setBioLoading(true);
                   setError('');
                   try {
-                    await authenticate();
+                    const res = await authenticate(bioEmployeeId.trim());
+                    setAuth(res.token, res.user);
                     onSignIn();
-                  } catch {
-                    setError('Fingerprint authentication failed');
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Fingerprint authentication failed');
                   } finally {
                     setBioLoading(false);
                   }

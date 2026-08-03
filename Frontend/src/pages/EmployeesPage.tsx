@@ -1,23 +1,42 @@
+import { useEffect, useState } from 'react';
 import { Icon } from '../components/Icon';
+import { apiRequest } from '../lib/api';
 
-const employees = [
-  { name: 'Boitumelo Magashula', title: 'Employee', number: '00001111' },
-  { name: 'Mooketsi Mogale', title: 'Employee', number: '00002222' },
-  { name: 'Bokang Ngwetjana', title: 'HR Management', number: '00003333' },
-  { name: 'Paballo Diphoko', title: 'HR Management', number: '00004444' },
-  { name: 'Bongiwe Siboza', title: 'Employee', number: '00005555' },
-  { name: 'Junior Mphefo', title: 'Employee', number: '00006666' },
-];
+interface Employee {
+  id: number;
+  employeeId: string;
+  name: string;
+  surname: string;
+  email: string;
+  role: string;
+}
 
 export function EmployeesPage() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    apiRequest<{ data: Employee[] }>('/api/employees')
+      .then((res) => setEmployees(res.data))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load employees'));
+  }, []);
+
+  const filtered = employees.filter((emp) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return [emp.name, emp.surname, emp.employeeId].some((field) => field.toLowerCase().includes(q));
+  });
+
   return (
     <>
       <h1 className="page-title">Employee overview</h1>
       <br />
       <div className="search-box">
         <Icon name="search" className="w-4 h-4 search-icon" />
-        <input type="text" placeholder="Search employee" />
+        <input type="text" placeholder="Search employee" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -28,11 +47,11 @@ export function EmployeesPage() {
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp) => (
-              <tr key={emp.number}>
-                <td>{emp.name}</td>
-                <td>{emp.title}</td>
-                <td>{emp.number}</td>
+            {filtered.map((emp) => (
+              <tr key={emp.id}>
+                <td>{emp.name} {emp.surname}</td>
+                <td>{emp.role}</td>
+                <td>{emp.employeeId}</td>
               </tr>
             ))}
           </tbody>
