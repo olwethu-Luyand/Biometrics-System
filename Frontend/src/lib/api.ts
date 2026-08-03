@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_URL ?? 'https://7346htsn-3000.inc1.devtunnels.ms').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
 const TOKEN_KEY = 'primeoak_token';
 const USER_KEY = 'primeoak_user';
 
