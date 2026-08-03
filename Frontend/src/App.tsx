@@ -12,21 +12,53 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { SignIn } from './components/auth/SignIn';
 import { SignUp } from './components/auth/SignUp';
 import { TermsPage } from './components/auth/TermsPage';
+import { ForgotPassword } from './components/auth/ForgotPassword';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [activePage, setActivePage] = useState('dashboard');
-  const [authPage, setAuthPage] = useState<'auth' | 'terms'>('auth');
+  const [authPage, setAuthPage] =
+  useState<
+    'auth' | 'terms' | 'forgot-password'
+  >('auth');
 
-  if (!isAuthenticated) {
-    if (authPage === 'terms') {
-      return <TermsPage onBack={() => setAuthPage('auth')} />;
+      if (!isAuthenticated) {
+        if (authPage === 'terms') {
+          
+          return <TermsPage onBack={() => setAuthPage('auth')} />;
+        }
+        if (authPage === 'forgot-password') {
+      return (
+        <ForgotPassword
+          onBackToSignIn={() => {
+            setAuthPage('auth');
+            setAuthMode('signin');
+          }}
+        />
+      );
     }
     return authMode === 'signin' ? (
-      <SignIn onSignIn={() => setIsAuthenticated(true)} onSwitchToSignUp={() => setAuthMode('signup')} />
-    ) : (
-      <SignUp onSignUp={() => setIsAuthenticated(true)} onSwitchToSignIn={() => setAuthMode('signin')} onTermsClick={() => setAuthPage('terms')} />
+      <SignIn
+  onSignIn={() =>
+    setIsAuthenticated(true)
+  }
+  onSwitchToSignUp={() =>
+    setAuthMode('signup')
+  }
+  onForgotPassword={() =>
+    setAuthPage('forgot-password')
+  }
+  />
+      ) : (
+        <SignUp
+    onSwitchToSignIn={() =>
+      setAuthMode('signin')
+    }
+    onTermsClick={() =>
+      setAuthPage('terms')
+    }
+  />
     );
   }
 
