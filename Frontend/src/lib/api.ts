@@ -1,3 +1,8 @@
+import { mockRequest, type MockRequestOptions } from './mock';
+
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+export const REAL_FINGERPRINT = import.meta.env.VITE_REAL_FINGERPRINT !== 'false';
+
 const API_BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
 const TOKEN_KEY = 'primeoak_token';
 const USER_KEY = 'primeoak_user';
@@ -7,9 +12,10 @@ export interface ApiUser {
   fullName: string;
   email: string;
   role: string;
+  employeeId?: string;
 }
 
-interface RequestOptions {
+export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   token?: string | null;
@@ -39,6 +45,10 @@ export function clearAuth() {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (USE_MOCK) {
+    return mockRequest<T>(path, options as MockRequestOptions);
+  }
+
   const token = options.token === undefined ? getToken() : options.token;
   const res = await fetch(`${API_BASE}${path}`, {
     method: options.method ?? 'GET',

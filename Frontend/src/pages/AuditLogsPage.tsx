@@ -1,15 +1,49 @@
+import { useEffect, useState } from 'react';
 import { Icon } from '../components/Icon';
+import { supabase } from '../lib/supabase';
+import { useTableVersion } from '../lib/supabaseRealtime';
 
-const rows = [
-  { employee: 'Bokang Ngwetjana', action: 'Registered employee', target: 'Paballo Diphoko', date: '03 August 2026', time: '09:12', user: 'Bokang Ngwetjana' },
-  { employee: 'Bokang Ngwetjana', action: 'Enrolled biometric', target: 'Paballo Diphoko', date: '03 August 2026', time: '09:13', user: 'Bokang Ngwetjana' },
-  { employee: 'Mooketsi Mogale', action: 'Updated payroll', target: '00002222', date: '03 August 2026', time: '08:47', user: 'Mooketsi Mogale' },
-  { employee: 'Boitumelo Magashula', action: 'Signed in', target: 'Fingerprint', date: '03 August 2026', time: '07:55', user: 'Boitumelo Magashula' },
-  { employee: 'Bokang Ngwetjana', action: 'Created report', target: 'Repeated Absence', date: '02 August 2026', time: '15:31', user: 'Bokang Ngwetjana' },
-  { employee: 'Junior Mphefo', action: 'Updated profile', target: '00006666', date: '02 August 2026', time: '11:04', user: 'Junior Mphefo' },
-];
+interface AuditRow {
+  date: string;
+  time: string;
+  user: string;
+  action: string;
+  target: string;
+}
+
+function formatDate(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 export function AuditLogsPage() {
+  const [rows, setRows] = useState<AuditRow[]>([]);
+  const version = useTableVersion('audit_logs');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!supabase) return;
+    supabase
+      .from('audit_logs')
+      .select('actor, action, target, log_date, log_time')
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setRows(
+          data.map((r) => ({
+            date: formatDate(r.log_date),
+            time: r.log_time.slice(0, 5),
+            user: r.actor,
+            action: r.action,
+            target: r.target ?? '',
+          })),
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [version]);
+
   return (
     <>
       <h1 className="page-title">Audit logs</h1>
@@ -39,6 +73,11 @@ export function AuditLogsPage() {
                 <td>{r.target}</td>
               </tr>
             ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-slate-400 text-sm">No audit log entries yet.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

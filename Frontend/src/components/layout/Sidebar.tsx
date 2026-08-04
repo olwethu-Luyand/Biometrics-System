@@ -1,6 +1,6 @@
 import { Icon } from '../Icon';
 
-const navItems = [
+const ALL_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'employees', label: 'Employees' },
   { id: 'attendance', label: 'Attendance' },
@@ -11,13 +11,17 @@ const navItems = [
   { id: 'profile', label: 'User profile' },
 ];
 
+const HR_NAV_IDS = ['dashboard', 'employees', 'attendance', 'report', 'payroll', 'profile'];
+
 interface SidebarProps {
   active: string;
+  role: 'admin' | 'hr';
   onNavigate: (id: string) => void;
   onLogout: () => void;
 }
 
-export function Sidebar({ active, onNavigate, onLogout }: SidebarProps) {
+export function Sidebar({ active, role, onNavigate, onLogout }: SidebarProps) {
+  const navItems = role === 'admin' ? ALL_NAV_ITEMS : ALL_NAV_ITEMS.filter((i) => HR_NAV_IDS.includes(i.id));
   return (
     <aside className="sidebar">
       <ul className="nav-list">

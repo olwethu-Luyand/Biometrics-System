@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { apiRequest, setAuth, USE_MOCK, type ApiUser } from '../../lib/api';
 import banner from '../../assets/prime_oak.jpeg';
 
 interface SignUpProps {
@@ -18,14 +19,30 @@ export function SignUp({ onSignUp, onSwitchToSignIn, onTermsClick }: SignUpProps
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    onSignUp();
+    try {
+      if (USE_MOCK) {
+        await apiRequest('/api/employees', {
+          method: 'POST',
+          body: { name, surname, email, role: role || 'Employee', employeeId: idNumber, password },
+        });
+        const res = await apiRequest<{ token: string; user: ApiUser }>('/api/auth/login', {
+          method: 'POST',
+          body: { email, password },
+          token: null,
+        });
+        setAuth(res.token, res.user);
+      }
+      onSignUp();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign up failed');
+    }
   };
 
   return (

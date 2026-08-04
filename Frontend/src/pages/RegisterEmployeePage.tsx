@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { Fingerprint, Plus, Search, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useWebAuthn } from '../hooks/useWebAuthn';
 import { apiRequest } from '../lib/api';
+import { insertEmployee } from '../lib/supabaseDb';
+import { supabase } from '../lib/supabase';
+import { useTableVersion } from '../lib/supabaseRealtime';
 
 const schema = z
   .object({
@@ -50,6 +53,7 @@ export function RegisterEmployeePage() {
   const [bioStatus, setBioStatus] = useState<BioStatus>('idle');
   const [createdEmployee, setCreatedEmployee] = useState<Employee | null>(null);
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const usersVersion = useTableVersion('users');
   const { register: registerBio, isSupported } = useWebAuthn();
 
   const {
@@ -64,6 +68,40 @@ export function RegisterEmployeePage() {
   });
 
   const loadEmployees = () => {
+    const client = supabase;
+    if (client) {
+      const load = async () => {
+        try {
+          const { data, error } = await client
+            .from('employee_roster')
+            .select('employee_id, name, surname, email, role')
+            .order('employee_id', { ascending: true });
+          if (error || !data) {
+            loadEmployeesFromMock();
+            return;
+          }
+          setEmployees(
+            (data as { employee_id: string; name: string; surname: string; email: string; role: string }[]).map((row) => ({
+              id: 0,
+              employeeId: row.employee_id,
+              name: row.name,
+              surname: row.surname,
+              email: row.email,
+              role: row.role,
+            })),
+          );
+          setListError('');
+        } catch {
+          loadEmployeesFromMock();
+        }
+      };
+      void load();
+      return;
+    }
+    loadEmployeesFromMock();
+  };
+
+  const loadEmployeesFromMock = () => {
     apiRequest<{ data: Employee[] }>('/api/employees')
       .then((res) => setEmployees(res.data))
       .catch((err) => setListError(err instanceof Error ? err.message : 'Failed to load employees'));
@@ -71,7 +109,7 @@ export function RegisterEmployeePage() {
 
   useEffect(() => {
     if (view === 'list') loadEmployees();
-  }, [view]);
+  }, [view, usersVersion]);
 
   useEffect(() => {
     if (view === 'add') {
@@ -105,22 +143,41 @@ export function RegisterEmployeePage() {
   const onFormSubmit = async (data: FormData) => {
     setNotice(null);
     try {
-      const created = await apiRequest<Employee>('/api/employees', {
-        method: 'POST',
-        body: {
-          name: data.fullName,
-          surname: data.surname,
-          email: data.email,
-          role: data.role,
-          employeeId: data.employeeId,
-          password: data.password,
-        },
-      });
+      const created = await createEmployee(data);
       setCreatedEmployee(created);
       setNotice({ type: 'success', text: `Employee ${created.name} ${created.surname} (${created.employeeId}) created.` });
     } catch (err) {
       setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Failed to register employee' });
     }
+  };
+
+  const createEmployee = async (data: FormData): Promise<Employee> => {
+    if (supabase) {
+      try {
+        await insertEmployee({
+          employeeId: data.employeeId,
+          name: data.fullName,
+          surname: data.surname,
+          email: data.email,
+          role: data.role,
+          password: data.password,
+        });
+        return { id: 0, employeeId: data.employeeId, name: data.fullName, surname: data.surname, email: data.email, role: data.role };
+      } catch (err) {
+        console.warn('Supabase insert failed, falling back to mock API', err);
+      }
+    }
+    return apiRequest<Employee>('/api/employees', {
+      method: 'POST',
+      body: {
+        name: data.fullName,
+        surname: data.surname,
+        email: data.email,
+        role: data.role,
+        employeeId: data.employeeId,
+        password: data.password,
+      },
+    });
   };
 
   const onBioClick = async () => {
@@ -190,7 +247,12 @@ export function RegisterEmployeePage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Role</label>
-              <input type="text" {...register('role')} className={inputClass} />
+              <select {...register('role')} className={inputClass}>
+                <option value="">Select a role</option>
+                <option value="Employee">Employee</option>
+                <option value="HR Manager">HR Manager</option>
+                <option value="Admin">Admin</option>
+              </select>
               <FieldError message={errors.role?.message} />
             </div>
 

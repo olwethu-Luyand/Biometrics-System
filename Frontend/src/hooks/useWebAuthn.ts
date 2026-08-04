@@ -1,4 +1,8 @@
-import { apiRequest } from '../lib/api';
+import { apiRequest, REAL_FINGERPRINT, USE_MOCK } from '../lib/api';
+import { mockAuthForEmployee } from '../lib/mock';
+import { saveWebAuthnCredential } from '../lib/supabaseDb';
+
+const scan = () => new Promise<void>((resolve) => setTimeout(resolve, 1500));
 
 export function toBase64Url(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -50,6 +54,18 @@ export function useWebAuthn() {
   async function register(employeeId: string) {
     if (!isSupported) throw new Error('WebAuthn is not supported on this browser');
 
+    if (USE_MOCK && !REAL_FINGERPRINT) {
+      const options = await apiRequest<RegisterOptions>('/api/webauthn/register/options', {
+        method: 'POST',
+        body: { employeeId },
+      });
+      void options;
+      await scan();
+      const result = { message: 'Biometric registered', credentialId: `mock-${employeeId}` } as RegisterVerifyResponse;
+      await saveWebAuthnCredential(employeeId, result.credentialId, 'Simulated scan');
+      return result;
+    }
+
     const options = await apiRequest<RegisterOptions>('/api/webauthn/register/options', {
       method: 'POST',
       body: { employeeId },
@@ -69,7 +85,7 @@ export function useWebAuthn() {
 
     const response = credential.response as AuthenticatorAttestationResponse;
 
-    return apiRequest<RegisterVerifyResponse>('/api/webauthn/register/verify', {
+    const result = await apiRequest<RegisterVerifyResponse>('/api/webauthn/register/verify', {
       method: 'POST',
       body: {
         employeeId,
@@ -83,10 +99,17 @@ export function useWebAuthn() {
         },
       },
     });
+    await saveWebAuthnCredential(employeeId, result.credentialId, 'Platform authenticator');
+    return result;
   }
 
   async function authenticate(employeeId: string) {
     if (!isSupported) throw new Error('WebAuthn is not supported on this browser');
+
+    if (USE_MOCK && !REAL_FINGERPRINT) {
+      await scan();
+      return mockAuthForEmployee(employeeId);
+    }
 
     const options = await apiRequest<AuthenticateOptions>('/api/webauthn/authenticate/options', {
       method: 'POST',
@@ -94,15 +117,20 @@ export function useWebAuthn() {
       token: null,
     });
 
-    const credential = (await navigator.credentials.get({
-      publicKey: {
-        challenge: fromBase64Url(options.challenge),
-        rpId: options.rpId,
-        timeout: options.timeout,
-        userVerification: options.userVerification,
-        allowCredentials: options.allowCredentials.map((c) => ({ ...c, id: fromBase64Url(String(c.id)) })),
-      },
-    })) as PublicKeyCredential;
+    let credential: PublicKeyCredential;
+    try {
+      credential = (await navigator.credentials.get({
+        publicKey: {
+          challenge: fromBase64Url(options.challenge),
+          rpId: options.rpId,
+          timeout: options.timeout,
+          userVerification: options.userVerification,
+          allowCredentials: options.allowCredentials.map((c) => ({ ...c, id: fromBase64Url(String(c.id)) })),
+        },
+      })) as PublicKeyCredential;
+    } catch {
+      throw new Error('No fingerprint registered on this device for PrimeOak. Register the employee biometric first.');
+    }
 
     const response = credential.response as AuthenticatorAssertionResponse;
 
